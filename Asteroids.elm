@@ -41,6 +41,9 @@ type alias Ship =
   , rotation : Int
   }
 
+type alias Dimensions =
+  { width : Int}
+
 
 spaceship : Ship
 spaceship =
@@ -92,16 +95,36 @@ keyDown keyCode model =
     --   { model | ship = fireShot model.ship }
     -- ArowLeft
     37 ->
-      updateAcceleration -0.0001 model
+      let
+        { ship } = model
+        newShip =
+          updateAccelerationShip -0.0001 ship
+      in
+        { model | ship = newShip }
     -- ArrowRight
     39 ->
-      updateAcceleration 0.0001 model
+      let
+        { ship } = model
+        newShip =
+          updateAccelerationShip 0.0001 ship
+      in
+        { model | ship = newShip }
     -- ArrowUp
     38 ->
-      updateRotation 1 model
+      let
+        { ship } = model
+        newShip =
+          updateRotationShip 1 ship
+      in
+        { model | ship = newShip }
     -- ArrowDown
     40 ->
-      updateRotation -1 model
+      let
+        { ship } = model
+        newShip =
+          updateRotationShip -1 ship
+      in
+        { model | ship = newShip }
 
     _ ->
       model
@@ -132,23 +155,40 @@ applyPhysicsHelper dt phyObj =
       phyObj.velocity + phyObj.acceleration * dt
 
     newVelocity =
-        if calculatedVelocity >= 0 && calculatedVelocity <= 1 then
+        if calculatedVelocity >= 0 && calculatedVelocity <= 0.1 then
           calculatedVelocity
         else if calculatedVelocity < 0 then
           0
         else
-          1
+          0.1
+
+    calculatedXPosition =
+      phyObj.x + dt * cos (degrees (toFloat phyObj.rotation)) * newVelocity
+
+    newXPosition =
+      if calculatedXPosition >= -500 && calculatedXPosition <= 500 then
+        calculatedXPosition
+      else if calculatedXPosition < -500 then
+        500
+      else
+        -500
+
+    calculatedYPosition =
+      phyObj.y + dt * sin (degrees (toFloat phyObj.rotation)) * newVelocity
+
+    newYPosition =
+      if calculatedYPosition >= -500 && calculatedYPosition <= 500 then
+        calculatedYPosition
+      else if calculatedYPosition < -500 then
+        500
+      else
+        -500
   in
     { phyObj |
-        x = phyObj.x + dt * cos (degrees (toFloat phyObj.rotation)) * newVelocity,
-        y = phyObj.y + dt * sin (degrees (toFloat phyObj.rotation)) * newVelocity,
+        x = newXPosition,
+        y = newYPosition,
         velocity = newVelocity
     }
-
-
-updateAcceleration : Float -> Model -> Model
-updateAcceleration addAcceleration model =
-  { model | ship = updateAccelerationShip addAcceleration model.ship }
 
 updateAccelerationShip : Float -> Ship -> Ship
 updateAccelerationShip addAcceleration ship =
@@ -185,14 +225,21 @@ updateRotationShip addRot ship =
 -- VIEW
 
 view : Model -> Html Msg
-view model =
-  Html.text (toString model)
 -- view model =
---   toHtml <|
---     container 400 400 middle <|
---       collage 400 400
---         [ rect 400 400
---             |> filled (rgb 0 0 0) ]
+--   Html.text (toString model)
+view model =
+  let
+    { ship } = model
+  in
+    toHtml <|
+      container 1000 1000 middle <|
+        collage 1000 1000
+          [ rect 1000 1000
+              |> filled (rgb 0 0 0)
+          , oval 15 15
+              |> filled white
+              |> move (ship.x, ship.y)
+          ]
 
 
 -- SUBSCRIPTIONS
